@@ -27,12 +27,6 @@
   * Equal contribution. <sup>&dagger;</sup> Corresponding author.
 </div>
 
-## License
-
-This repository is released under the non-commercial research and educational use license in [LICENSE](LICENSE). It is a source-available research release and is not distributed under an OSI-approved open-source license.
-
-The FreeTimeGS++ research license applies only to the original code in this repository that is owned by the authors. Third-party software, models, weights, and datasets remain under their own license terms. In particular, this project depends on external packages such as `gsplat` (Apache-2.0), `pycolmap` (BSD-3-Clause), PyTorch/torchvision (BSD-style), RoMa (MIT), MEMFOF (BSD-3-Clause), `fused-ssim` (MIT), `tiny-cuda-nn` (BSD-3-Clause), and `rerun-sdk` (MIT OR Apache-2.0). See [THIRD_PARTY.md](THIRD_PARTY.md) for a concise inventory.
-
 ## Requirements
 
 FreeTimeGS++ currently targets Python 3.12 and CUDA 12.8. The repository also assumes standard system tools such as `ffmpeg` and native build tooling for Python extensions. See [Dockerfile](Dockerfile), [flake.nix](flake.nix), and [uv.lock](uv.lock) for the reference system and Python environment definitions.
@@ -118,6 +112,12 @@ uv run -m ftgspp.data.flow configs/dynerf/ftgspp/flame_steak.toml
 Since this preprocessing can be time-consuming, the repository also provides [`scripts/run_ufm_flow`](scripts/run_ufm_flow) to precompute and cache UFM flow for the released scenes in advance.
 
 `ftgspp.data.flow` expects an external UFM installation (`ufm` or `uniflowmatch`) and is not installed by default through this repository's Python dependencies.
+
+## License
+
+This repository is released under the non-commercial research and educational use license in [LICENSE](LICENSE). It is a source-available research release and is not distributed under an OSI-approved open-source license.
+
+The FreeTimeGS++ research license applies only to the original code in this repository that is owned by the authors. Third-party software, models, weights, and datasets remain under their own license terms. In particular, this project depends on external packages such as `gsplat` (Apache-2.0), `pycolmap` (BSD-3-Clause), PyTorch/torchvision (BSD-style), RoMa (MIT), MEMFOF (BSD-3-Clause), `fused-ssim` (MIT), `tiny-cuda-nn` (BSD-3-Clause), and `rerun-sdk` (MIT OR Apache-2.0). See [THIRD_PARTY.md](THIRD_PARTY.md) for a concise inventory.
 
 ## Citation
 

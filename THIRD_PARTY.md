@@ -46,17 +46,12 @@ datasets, or container images.
 
 Notes:
 
-- `gsplat` is intentionally not declared as an automatic dependency in this
-  repository's package metadata. Users are expected to obtain and install
-  `gsplat==1.5.3` separately from its upstream project under Apache-2.0.
-- This release is validated against `gsplat==1.5.3`. The relocation path uses
-  `gsplat` private strategy helpers from that version.
-- Most other Python packages listed in `pyproject.toml` may still be installed
-  through the repository's environment setup commands.
+- `gsplat` is not installed automatically by this repository. This release is
+  validated against `gsplat==1.5.3`.
 - `tinycudann` is installed from a repository fork configured in
   `pyproject.toml`; its upstream project is NVIDIA's `tiny-cuda-nn`.
-- UFM is an optional external installation used only for the UFM-based
-  initialization variant.
+- UFM is required for reproducing the final FreeTimeGS++ preset with
+  UFM-based initialization, but it is installed separately from this repository.
 - If you redistribute binaries, containers, or packaged environments built
   from this repository, you are responsible for satisfying the notice and
   license obligations of the bundled third-party software.
