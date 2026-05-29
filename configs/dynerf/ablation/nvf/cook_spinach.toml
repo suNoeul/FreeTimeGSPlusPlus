@@ -1,0 +1,4 @@
+extends = "../../ftgs/cook_spinach.toml"
+
+[model]
+velocity_model = "field"

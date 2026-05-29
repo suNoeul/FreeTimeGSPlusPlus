@@ -1,0 +1,4 @@
+extends = "../../ftgs/sear_steak.toml"
+
+[model]
+velocity_model = "field"

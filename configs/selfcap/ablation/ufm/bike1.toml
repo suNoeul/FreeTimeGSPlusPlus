@@ -1,0 +1,6 @@
+extends = "../../ftgs/bike1.toml"
+
+[init]
+temporal_motion_adapted = true
+temporal_flow_path = "_flow/selfcap/bike1"
+temporal_covis_thresh = 0.7

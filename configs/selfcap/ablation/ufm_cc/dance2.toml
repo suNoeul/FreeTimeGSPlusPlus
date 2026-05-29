@@ -1,0 +1,11 @@
+extends = "../../ftgs/dance2.toml"
+
+[init]
+temporal_motion_adapted = true
+temporal_flow_path = "_flow/selfcap/dance2"
+temporal_covis_thresh = 0.7
+
+[train]
+color_correction = true
+color_correction_start = 3000
+color_corrector_weight = 1e-3

@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+set -euxo pipefail
+
+scenes="dance1 dance2 corgi1 corgi2 bike1 bike2"
+runpath="_run/selfcap"
+
+for scene in $scenes
+do
+  case "$scene" in
+    dance1|dance2) cam=15 ;;
+    corgi1|corgi2) cam=7 ;;
+    bike1|bike2)   cam=9 ;;
+    *) cam=0 ;;
+  esac
+
+  cfg="configs/selfcap/ftgs/$scene.toml"
+  out="$runpath/$scene"
+
+  uv run -m ftgspp.data.extract $cfg
+  uv run -m ftgspp.data.sfm $cfg
+  uv run -m ftgspp.data.prep $cfg
+  uv run -m ftgspp.init.points $cfg
+  uv run -m ftgspp.init $cfg $out
+  uv run -m ftgspp.train $cfg $out
+
+  uv run -m ftgspp.eval   $out $out/metrics.json
+  uv run -m ftgspp.render $out $out/rgb.mp4 --camera $cam
+  uv run -m ftgspp.render $out $out/errmap.mp4 --mode error-map --camera $cam
+  uv run -m ftgspp.render $out $out/vfield.mp4 --mode velocity-field --camera $cam
+done
+
+jq -n '
+  (reduce inputs as $file ({}; . + {($file | input_filename | split("/")[-2]): $file})) as $perscene |
+  ($perscene | map(to_entries) | transpose | map({(.[0].key): (map(.value) | add / length)}) | add) as $mean |
+  $perscene + {mean: $mean}' \
+  $runpath/*/metrics.json > $runpath/metrics.json

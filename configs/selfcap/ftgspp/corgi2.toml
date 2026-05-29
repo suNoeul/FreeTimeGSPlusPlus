@@ -1,0 +1,15 @@
+extends = "../ftgs/corgi2.toml"
+
+[init]
+temporal_motion_adapted = true
+temporal_flow_path = "_flow/selfcap/corgi2"
+temporal_covis_thresh = 0.7
+
+[train]
+color_correction = true
+color_correction_start = 3000
+color_corrector_weight = 1e-3
+
+[model]
+max_duration = 1
+marginal_gating = true

@@ -1,0 +1,6 @@
+extends = "../../ftgs/flame_steak.toml"
+
+[init]
+temporal_motion_adapted = true
+temporal_flow_path = "_flow/dynerf/flame_steak"
+temporal_covis_thresh = 0.3

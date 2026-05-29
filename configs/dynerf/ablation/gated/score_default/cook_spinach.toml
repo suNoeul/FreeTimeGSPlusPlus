@@ -1,0 +1,5 @@
+extends = "../../../ftgs/cook_spinach.toml"
+
+[model]
+max_duration = 1
+marginal_gating = true

@@ -1,0 +1,9 @@
+extends = "../../../ftgs/coffee_martini.toml"
+
+[model]
+max_duration = 1
+marginal_gating = true
+
+[train.relocation]
+score_mode = "gate_included"
+score_mode_start = 3000

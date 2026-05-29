@@ -1,0 +1,240 @@
+#!/usr/bin/env -S uv run --script
+
+import argparse
+import json
+from dataclasses import dataclass
+from pathlib import Path
+from types import ModuleType
+
+import pandas as pd
+from tqdm import tqdm
+
+import ftgspp
+import ftgspp.data
+import ftgspp.data.extract
+import ftgspp.data.prep
+import ftgspp.data.sfm
+import ftgspp.eval
+import ftgspp.init.__main__
+import ftgspp.init.points
+import ftgspp.render
+import ftgspp.train.__main__
+from ftgspp.utils import Pipeline
+from ftgspp.utils.config import Config
+
+SCENES = {
+    "dynerf": [
+        "coffee_martini",
+        "cook_spinach",
+        "cut_roasted_beef",
+        "flame_salmon",
+        "flame_steak",
+        "sear_steak",
+    ],
+    "selfcap": [
+        "dance1",
+        "dance2",
+        "corgi1",
+        "corgi2",
+        "bike1",
+        "bike2",
+    ],
+}
+
+SELF_CAP_TEST_CAM = {
+    "dance1": 15,
+    "dance2": 15,
+    "corgi1": 7,
+    "corgi2": 7,
+    "bike1": 9,
+    "bike2": 9,
+}
+
+
+def default_camera(dataset: str, scene: str) -> int:
+    if dataset == "dynerf":
+        return 0
+    if dataset == "selfcap":
+        return SELF_CAP_TEST_CAM.get(scene, 0)
+    return 0
+
+
+def _run_mod(mod: ModuleType, args: list[str]):
+    parser = mod.make_parser()
+    args = parser.parse_args(args)
+    mod.main(args)
+
+
+@dataclass
+class Runner(Pipeline):
+    dataset: str
+    scene: str
+    config_path: Path
+    run_path: Path
+    stages_to_run: list[str]
+
+    def __post_init__(self):
+        self.config = Config.load(self.config_path)
+
+    @Pipeline.stage("extract")
+    def extract(self):
+        _run_mod(ftgspp.data.extract, [str(self.config_path)])
+
+    @Pipeline.stage("sfm")
+    def sfm(self):
+        _run_mod(ftgspp.data.sfm, [str(self.config_path)])
+
+    @Pipeline.stage("prep")
+    def prep(self):
+        _run_mod(ftgspp.data.prep, [str(self.config_path)])
+
+    @Pipeline.stage("points")
+    def points(self):
+        _run_mod(ftgspp.init.points, [str(self.config_path)])
+
+    @Pipeline.stage("init")
+    def init(self):
+        _run_mod(ftgspp.init.__main__, [str(self.config_path), str(self.run_path)])
+
+    @Pipeline.stage("train")
+    def train(self):
+        _run_mod(ftgspp.train.__main__, [str(self.config_path), str(self.run_path)])
+
+    @Pipeline.stage("eval")
+    def eval(self):
+        _run_mod(ftgspp.eval, [str(self.run_path), str(self.run_path / "metrics.json")])
+
+    @Pipeline.stage("render")
+    def render(self):
+        _run_mod(
+            ftgspp.render,
+            [
+                str(self.run_path),
+                str(self.run_path / "rgb.mp4"),
+                "--camera",
+                str(default_camera(self.dataset, self.scene)),
+            ],
+        )
+
+    def __call__(self):
+        for stage_name in self.stages_to_run:
+            print(f"Running stage: {stage_name}")
+            stage = self.stages[stage_name]
+            stage(self)
+
+
+def stats(
+    scenes: list[str],
+    num: int,
+    output: Path,
+):
+    dfs: list[pd.DataFrame] = []
+    for scene in scenes:
+        for i in range(num):
+            metrics_path = output / scene / f"{i:02d}" / "metrics.json"
+            with open(metrics_path, "r") as f:
+                d = json.load(f)
+
+            df = pd.DataFrame([d])
+            df["scene"] = scene
+            df["run"] = i
+            dfs.append(df)
+
+    df = pd.concat(dfs)
+    df = df.set_index(["scene", "run"])
+    per_run = df.groupby("run").mean()
+
+    summary_columns = {
+        "PSNR_mean": ("psnr", "mean", 2),
+        "PSNR_std": ("psnr", "std", 2),
+        "PSNR_max": ("psnr", "max", 2),
+        "LPIPS-Alex": ("lpips-alex", "mean", 3),
+        "LPIPS-Vgg": ("lpips-vgg", "mean", 3),
+        "SSIM-1": ("ssim-1", "mean", 3),
+        "SSIM-2": ("ssim-2", "mean", 3),
+        "DSSIM-1": ("dssim-1", "mean", 3),
+        "DSSIM-2": ("dssim-2", "mean", 3),
+    }
+
+    def summarize(grouped) -> pd.DataFrame:
+        summary = pd.DataFrame(index=grouped.size().index)
+        for out_name, (metric, agg, decimals) in summary_columns.items():
+            values = getattr(grouped[metric], agg)()
+            summary[out_name] = values.round(decimals)
+        return summary
+
+    # Summary for each scene, across runs
+    summary_scenes = summarize(df.groupby("scene"))
+
+    # Summary for mean of all scenes, across runs
+    summary_avg = summarize(per_run.assign(scene="total").groupby("scene"))
+
+    summary = pd.concat([summary_scenes, summary_avg])
+
+    df.to_csv(output / "all.csv")
+    df.to_json(output / "all.json")
+    per_run.to_csv(output / "per_run.csv")
+    per_run.to_json(output / "per_run.json")
+    summary.to_csv(output / "summary.csv")
+    summary.to_json(output / "summary.json")
+
+    print(summary)
+
+
+def main():
+    all_stages = list(Runner.stages.keys())
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("dataset", choices=SCENES.keys())
+    parser.add_argument("config", help="config directory path", type=Path)
+    parser.add_argument("output", help="output directory path", type=Path)
+    parser.add_argument("--stats", help="run statistics only", action="store_true")
+    parser.add_argument("--scenes", help="scenes to train", nargs="*")
+    parser.add_argument(
+        "--from", help="stage to start from", choices=all_stages, default="extract"
+    )
+    parser.add_argument("--to", help="stage to end at", choices=all_stages)
+    parser.add_argument(
+        "--num",
+        "-n",
+        help="number of repeated runs",
+        type=int,
+        default=1,
+    )
+    args = parser.parse_args()
+
+    scenes = args.scenes or SCENES[args.dataset]
+
+    if args.stats:
+        stats(scenes=scenes, num=args.num, output=args.output)
+        return
+
+    if (from_stage := getattr(args, "from")) is not None:
+        from_idx = all_stages.index(from_stage)
+    else:
+        from_idx = 0
+    if (to_stage := getattr(args, "to")) is not None:
+        to_idx = all_stages.index(to_stage) + 1
+    else:
+        to_idx = None
+    stages = all_stages[from_idx:to_idx]
+
+    bar = tqdm(total=len(scenes) * args.num)
+    for scene in scenes:
+        for i in range(args.num):
+            bar.set_description(f"{scene} {i + 1}/{args.num}")
+            Runner(
+                dataset=args.dataset,
+                scene=scene,
+                config_path=args.config / f"{scene}.toml",
+                run_path=args.output / scene / f"{i:02d}",
+                stages_to_run=stages,
+            )()
+            bar.update()
+
+    if "eval" in stages:
+        stats(scenes=scenes, num=args.num, output=args.output)
+
+
+if __name__ == "__main__":
+    main()

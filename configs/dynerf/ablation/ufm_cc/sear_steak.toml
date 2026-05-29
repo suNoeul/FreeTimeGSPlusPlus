@@ -1,0 +1,11 @@
+extends = "../../ftgs/sear_steak.toml"
+
+[init]
+temporal_motion_adapted = true
+temporal_flow_path = "_flow/dynerf/sear_steak"
+temporal_covis_thresh = 0.3
+
+[train]
+color_correction = true
+color_correction_start = 3000
+color_corrector_weight = 1e-3

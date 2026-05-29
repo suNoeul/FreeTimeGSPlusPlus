@@ -1,0 +1,77 @@
+[project]
+name = "ftgspp"
+version = "0.1.0"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = "==3.12.*"
+# `gsplat` is intentionally excluded from automatic dependency resolution.
+# Install gsplat==1.5.3 separately from upstream under its own Apache-2.0
+# license.
+dependencies = [
+    "imagecodecs>=2025.8.2",
+    "imageio>=2.37.0",
+    "matplotlib>=3.10.5",
+    "msgspec[toml]>=0.19.0",
+    "numpy>=2.2.6",
+    "opencv-python-headless>=4.11.0.86",
+    "pillow>=11.3.0",
+    "pycolmap",
+    "rerun-sdk>=0.24.1",
+    "scipy>=1.16.1",
+    "setuptools>=80.9.0",
+    "torch>=2.8.0",
+    "torchmetrics>=1.8.1",
+    "torchvision>=0.23.0",
+    "tqdm>=4.67.1",
+    "tensordict>=0.9.1",
+    "flip-evaluator>=1.6.0.1",
+    "einops>=0.8.1",
+    "kornia>=0.8.1",
+    "av>=14.0.0",
+    "memfof",
+    "tinycudann>=2.0",
+    "cuml-cu12>=25.10.0",
+    "uv-build>=0.9.21",
+    "pandas>=2.3.3",
+]
+
+[build-system]
+requires = ["setuptools>=80"]
+build-backend = "setuptools.build_meta"
+
+[dependency-groups]
+with-torch = [
+    "fused-ssim",
+    "romatch[fused-local-corr]",
+    "romav2>=2.0.0",
+    "tinycudann",
+]
+
+[tool.setuptools.packages.find]
+include = ["ftgspp*"]
+
+[tool.pyright]
+venv = ".venv"
+venvPath = "."
+
+[tool.uv]
+no-build-isolation-package = ["fused-ssim", "romatch", "tinycudann"]
+
+[tool.uv.sources]
+fused-ssim = { git = "https://github.com/MrNeRF/optimized-fused-ssim" }
+torch = { index = "pytorch-cu128" }
+torchvision = { index = "pytorch-cu128" }
+romatch = { git = "https://github.com/Parskatt/RoMa", tag = "v0.1.2" }
+pycolmap = { git = "https://github.com/colmap/colmap", tag = "3.12.3" }
+tinycudann = { git = "https://github.com/yklcs/tiny-cuda-nn", subdirectory = "bindings/torch" }
+memfof = { git = "https://github.com/msu-video-group/memfof" }
+
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+
+[[tool.uv.dependency-metadata]]
+name = "fused-ssim"
+version = "0.0.0"
+requires-dist = ["setuptools", "torch"]

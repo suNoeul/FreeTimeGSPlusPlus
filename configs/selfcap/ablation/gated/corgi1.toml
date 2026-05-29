@@ -1,0 +1,5 @@
+extends = "../../ftgs/corgi1.toml"
+
+[model]
+max_duration = 1
+marginal_gating = true

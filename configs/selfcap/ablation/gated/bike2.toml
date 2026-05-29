@@ -1,0 +1,5 @@
+extends = "../../ftgs/bike2.toml"
+
+[model]
+max_duration = 1
+marginal_gating = true

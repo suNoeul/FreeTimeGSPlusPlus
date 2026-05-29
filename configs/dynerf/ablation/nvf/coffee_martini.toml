@@ -1,0 +1,4 @@
+extends = "../../ftgs/coffee_martini.toml"
+
+[model]
+velocity_model = "field"

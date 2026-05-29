@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+set -euxo pipefail
+
+device="${DEVICE:-cuda}"
+cameras="${CAMERAS:-all}"
+overwrite="${OVERWRITE:-0}"
+
+dynerf_scenes="coffee_martini cook_spinach cut_roasted_beef flame_salmon flame_steak sear_steak"
+selfcap_scenes="dance1 dance2 corgi1 corgi2 bike1 bike2"
+
+for scene in $dynerf_scenes
+do
+  cfg="configs/dynerf/ftgspp/$scene.toml"
+  cmd=(uv run -m ftgspp.data.flow "$cfg" --device "$device" --cameras "$cameras")
+  if [[ "$overwrite" == "1" ]]; then
+    cmd+=(--overwrite)
+  fi
+  "${cmd[@]}"
+done
+
+for scene in $selfcap_scenes
+do
+  cfg="configs/selfcap/ftgspp/$scene.toml"
+  cmd=(uv run -m ftgspp.data.flow "$cfg" --device "$device" --cameras "$cameras")
+  if [[ "$overwrite" == "1" ]]; then
+    cmd+=(--overwrite)
+  fi
+  "${cmd[@]}"
+done

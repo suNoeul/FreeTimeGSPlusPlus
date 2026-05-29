@@ -1,0 +1,4 @@
+extends = "../../ftgs/flame_salmon.toml"
+
+[model]
+velocity_model = "field"

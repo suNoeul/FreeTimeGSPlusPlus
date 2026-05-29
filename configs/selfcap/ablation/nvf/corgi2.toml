@@ -1,0 +1,4 @@
+extends = "../../ftgs/corgi2.toml"
+
+[model]
+velocity_model = "field"

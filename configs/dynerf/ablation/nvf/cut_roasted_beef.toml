@@ -1,0 +1,4 @@
+extends = "../../ftgs/cut_roasted_beef.toml"
+
+[model]
+velocity_model = "field"

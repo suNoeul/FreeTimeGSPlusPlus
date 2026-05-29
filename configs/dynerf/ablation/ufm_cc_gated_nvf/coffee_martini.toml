@@ -1,0 +1,16 @@
+extends = "../../ftgs/coffee_martini.toml"
+
+[init]
+temporal_motion_adapted = true
+temporal_flow_path = "_flow/dynerf/coffee_martini"
+temporal_covis_thresh = 0.3
+
+[train]
+color_correction = true
+color_correction_start = 3000
+color_corrector_weight = 1e-3
+
+[model]
+max_duration = 1
+marginal_gating = true
+velocity_model = "field"

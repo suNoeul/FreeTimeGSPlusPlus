@@ -1,0 +1,6 @@
+extends = "../../ftgs/coffee_martini.toml"
+
+[init]
+temporal_motion_adapted = true
+temporal_flow_path = "_flow/dynerf/coffee_martini"
+temporal_covis_thresh = 0.3

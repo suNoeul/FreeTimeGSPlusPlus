@@ -1,0 +1,29 @@
+# OS
+.DS_Store
+
+# Python bytecode / extensions
+__pycache__/
+*.py[cod]
+*.so
+
+# Python packaging / environments
+*.egg-info/
+/build/
+/dist/
+/.venv/
+.env
+
+# Runtime artifacts / profiling
+*.lprof
+*.prof
+/profiling/
+nohup.out
+/tmp/
+
+# Project-generated outputs
+/_extracted/
+/_colmap/
+/_points/
+/_memmap/
+/_flow/
+/_run/
