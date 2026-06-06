@@ -146,9 +146,7 @@ class Trainer(Pipeline):
             run_path=self.run_path,
             lrs=cfg.train.lrs,
             lr_schedules=cfg.train.lr_schedules,
-            checkpoint_iterations=[
-                cfg.train.iterations - n for n in range(100, 1100, 100)
-            ],
+            checkpoint_iterations=[],
             logger=self.logger,
             velocity_distill=velocity_distill,
             velocity_distill_warmup_steps=velocity_distill_warmup_steps,
@@ -245,7 +243,7 @@ class Trainer(Pipeline):
                 "times": 1.6e-4,
             },
             lr_schedules={},
-            checkpoint_iterations=[34500, 34600, 34700, 34800, 34900],
+            checkpoint_iterations=[],
             logger=self.logger,
             start_iteration=cfg.train.iterations,
         )

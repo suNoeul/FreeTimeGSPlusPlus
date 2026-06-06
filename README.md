@@ -1,5 +1,16 @@
 <div align="center">
   <h1>FreeTimeGS++: Secrets of Dynamic Gaussian<br />Splatting and Their Principles</h1>
+  <a href="https://yklcs.com/">Lucas Yunkyu Lee</a><sup>1,2,*</sup>,
+  <a href="https://sunoeul.github.io/">Soonho Kim</a><sup>1,*</sup>,
+  <a href="https://ywk02.github.io/">Youngwook Kim</a><sup>1</sup>,
+  <a href="https://nstar1125.github.io/">Sangmin Kim</a><sup>1</sup>,
+  <a href="https://jaesik.info/">Jaesik Park</a><sup>1,&dagger;</sup>
+  <br />
+  <strong><sup>1</sup> Seoul National University &nbsp; <sup>2</sup> POSTECH</strong>
+  <br />
+  <sup>*</sup> Equal contribution. <sup>&dagger;</sup> Corresponding author.
+  <br />
+  <br />
   <a href="https://arxiv.org/pdf/2605.03337">
     <img alt="Paper" src="https://img.shields.io/badge/paper-blue" />
   </a>
@@ -14,17 +25,16 @@
   </a>
   <br />
   <br />
-  <strong><sup>1</sup> Seoul National University &nbsp; <sup>2</sup> POSTECH</strong>
-  <br />
-  <br />
-  <a href="https://yklcs.com/">Lucas Yunkyu Lee</a><sup>1,2,*</sup>,
-  <a href="https://sunoeul.github.io/">Soonho Kim</a><sup>1,*</sup>,
-  <a href="https://ywk02.github.io/">Youngwook Kim</a><sup>1</sup>,
-  <a href="https://nstar1125.github.io/">Sangmin Kim</a><sup>1</sup>,
-  <a href="https://jaesik.info/">Jaesik Park</a><sup>1,&dagger;</sup>
-  <br />
-  <br />
-  * Equal contribution. <sup>&dagger;</sup> Corresponding author.
+  <table>
+    <tr>
+      <td align="center" width="50%">
+        <img src="assets/demo_dynerf_flame_steak.gif" alt="Side-by-side FreeTimeGS and FreeTimeGS++ rendering on the DyNeRF flame steak scene." width="420" />
+      </td>
+      <td align="center" width="50%">
+        <img src="assets/demo_selfcap_corgi1.gif" alt="Side-by-side FreeTimeGS and FreeTimeGS++ rendering on the SelfCap corgi1 scene." width="420" />
+      </td>
+    </tr>
+  </table>
 </div>
 
 ## Requirements
