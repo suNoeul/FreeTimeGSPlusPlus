@@ -27,3 +27,11 @@ nohup.out
 /_memmap/
 /_flow/
 /_run/
+
+# Symlinked project-generated outputs
+/_extracted
+/_colmap
+/_points
+/_memmap
+/_flow
+/_run
