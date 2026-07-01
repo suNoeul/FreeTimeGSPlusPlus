@@ -72,6 +72,8 @@ class Runner(Pipeline):
     config_path: Path
     run_path: Path
     stages_to_run: list[str]
+    seed: int | None = None
+    seed_offset: int = 0
 
     def __post_init__(self):
         self.config = Config.load(self.config_path)
@@ -98,7 +100,15 @@ class Runner(Pipeline):
 
     @Pipeline.stage("train")
     def train(self):
-        _run_mod(ftgspp.train.__main__, [str(self.config_path), str(self.run_path)])
+        args = [
+            str(self.config_path),
+            str(self.run_path),
+            "--seed-offset",
+            str(self.seed_offset),
+        ]
+        if self.seed is not None:
+            args.extend(["--seed", str(self.seed)])
+        _run_mod(ftgspp.train.__main__, args)
 
     @Pipeline.stage("eval")
     def eval(self):
@@ -201,6 +211,12 @@ def main():
         type=int,
         default=1,
     )
+    parser.add_argument(
+        "--seed",
+        help="base train seed; each repeated run adds its run index",
+        type=int,
+        default=None,
+    )
     args = parser.parse_args()
 
     scenes = args.scenes or SCENES[args.dataset]
@@ -229,6 +245,8 @@ def main():
                 config_path=args.config / f"{scene}.toml",
                 run_path=args.output / scene / f"{i:02d}",
                 stages_to_run=stages,
+                seed=args.seed,
+                seed_offset=i,
             )()
             bar.update()
 

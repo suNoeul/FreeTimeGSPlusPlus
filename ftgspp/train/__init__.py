@@ -2,9 +2,11 @@
 # 2025-2026 Lucas Yunkyu Lee <lucaslee@postech.ac.kr>, SNU VGI Lab
 
 import logging
+import random
 from pathlib import Path
 from typing import Optional, cast
 
+import numpy as np
 import torch
 
 from ftgspp.data.utils import MultiViewData
@@ -30,6 +32,13 @@ class Trainer(Pipeline):
         for handler in list(logger.handlers):
             logger.removeHandler(handler)
             handler.close()
+
+    @staticmethod
+    def _seed_train_rngs(seed: int):
+        random.seed(seed)
+        np.random.seed(seed)
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
 
     def __init__(
         self,
@@ -57,6 +66,8 @@ class Trainer(Pipeline):
     def train(self):
         self.logger.info("Starting training")
         cfg = self.config
+        self._seed_train_rngs(cfg.train.seed)
+        self.logger.info("Using train seed %d", cfg.train.seed)
 
         dataset: MultiViewData = MultiViewData.load(cfg.data.memmap_path)
         gs = Gaussians.load(self.run_path / "init.pt")

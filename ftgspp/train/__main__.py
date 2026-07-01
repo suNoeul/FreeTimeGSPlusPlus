@@ -19,6 +19,9 @@ logger.setLevel(logging.INFO)
 
 def main(args: argparse.Namespace):
     config = Config.load(args.config)
+    if args.seed is not None:
+        config.train.seed = args.seed
+    config.train.seed += args.seed_offset
 
     if args.rerun is not None:
         rr.serve_web_viewer(open_browser=False)
@@ -44,6 +47,8 @@ def make_parser() -> argparse.ArgumentParser:
     parser.add_argument("run_path", type=Path)
     parser.add_argument("--rerun", type=str, default=None)
     parser.add_argument("--stages", choices=Trainer.stages.keys(), nargs="+", default=None)
+    parser.add_argument("--seed", type=int, default=None)
+    parser.add_argument("--seed-offset", type=int, default=0)
 
     return parser
 

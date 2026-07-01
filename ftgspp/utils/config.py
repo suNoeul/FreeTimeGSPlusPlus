@@ -104,6 +104,7 @@ class TrainConfig(ConfigBase):
     color_corrector_weight: float
 
     hard_separation: bool
+    seed: int = 0
 
 
 def deep_update(base: dict, new: dict):
@@ -151,6 +152,15 @@ class Config(ConfigBase):
                 return str(obj.expanduser().resolve())
             return obj
 
+        def _drop_none(obj):
+            if isinstance(obj, dict):
+                return {k: _drop_none(v) for k, v in obj.items() if v is not None}
+            if isinstance(obj, list):
+                return [_drop_none(v) for v in obj]
+            return obj
+
         with open(path, "wb") as f:
-            config = msgspec.toml.encode(self, enc_hook=_enc_hook)
+            config = msgspec.to_builtins(self, enc_hook=_enc_hook)
+            config = _drop_none(config)
+            config = msgspec.toml.encode(config)
             f.write(config)
