@@ -1,5 +1,8 @@
-FROM nvidia/cuda:12.8.1-cudnn-devel-ubuntu22.04
+FROM nvidia/cuda:12.4.1-cudnn-devel-ubuntu22.04
 
+COPY --from=ghcr.io/astral-sh/uv:0.11.24 /uv /uvx /usr/local/bin/
+
+ARG CUDA_ARCH=89
 ARG CERES_VERSION=2.1.0
 ARG COLMAP_VERSION=3.12.3
 
@@ -9,6 +12,8 @@ ENV DEBIAN_FRONTEND=noninteractive \
     Ceres_DIR=/usr/local/lib/cmake/Ceres \
     colmap_DIR=/usr/local/share/colmap \
     CMAKE_PREFIX_PATH=/usr/local \
+    PATH=/usr/local/cuda/bin:$PATH \
+    UV_LINK_MODE=copy \
     LD_LIBRARY_PATH=/usr/local/lib:/usr/local/cuda/lib64:$LD_LIBRARY_PATH
 
 RUN apt-get update && apt-get install -y --no-install-recommends \

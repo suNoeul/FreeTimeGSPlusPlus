@@ -15,13 +15,13 @@ dependencies = [
     "numpy>=2.2.6",
     "opencv-python-headless>=4.11.0.86",
     "pillow>=11.3.0",
-    "pycolmap",
+    "pycolmap==3.12.3",
     "rerun-sdk>=0.24.1",
     "scipy>=1.16.1",
     "setuptools>=80.9.0",
-    "torch>=2.8.0",
+    "torch==2.6.0+cu124",
     "torchmetrics>=1.8.1",
-    "torchvision>=0.23.0",
+    "torchvision==0.21.0+cu124",
     "tqdm>=4.67.1",
     "tensordict>=0.9.1",
     "flip-evaluator>=1.6.0.1",
@@ -42,8 +42,8 @@ build-backend = "setuptools.build_meta"
 [dependency-groups]
 with-torch = [
     "fused-ssim",
+    "fused-local-corr",
     "romatch[fused-local-corr]",
-    "romav2>=2.0.0",
     "tinycudann",
 ]
 
@@ -57,18 +57,21 @@ venvPath = "."
 [tool.uv]
 no-build-isolation-package = ["fused-ssim", "romatch", "tinycudann"]
 
+[tool.uv.extra-build-dependencies]
+tinycudann = ["setuptools"]
+
 [tool.uv.sources]
 fused-ssim = { git = "https://github.com/MrNeRF/optimized-fused-ssim" }
-torch = { index = "pytorch-cu128" }
-torchvision = { index = "pytorch-cu128" }
+fused-local-corr = { git = "https://github.com/Parskatt/fused-local-corr" }
+torch = { index = "pytorch-cu124" }
+torchvision = { index = "pytorch-cu124" }
 romatch = { git = "https://github.com/Parskatt/RoMa", tag = "v0.1.2" }
-pycolmap = { git = "https://github.com/colmap/colmap", tag = "3.12.3" }
 tinycudann = { git = "https://github.com/yklcs/tiny-cuda-nn", subdirectory = "bindings/torch" }
 memfof = { git = "https://github.com/msu-video-group/memfof" }
 
 [[tool.uv.index]]
-name = "pytorch-cu128"
-url = "https://download.pytorch.org/whl/cu128"
+name = "pytorch-cu124"
+url = "https://download.pytorch.org/whl/cu124"
 explicit = true
 
 [[tool.uv.dependency-metadata]]

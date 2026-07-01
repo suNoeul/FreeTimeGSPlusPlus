@@ -43,7 +43,7 @@
 
 ## Requirements
 
-FreeTimeGS++ currently targets Python 3.12 and CUDA 12.8. The repository also assumes standard system tools such as `ffmpeg` and native build tooling for Python extensions. See [Dockerfile](Dockerfile), [flake.nix](flake.nix), and [uv.lock](uv.lock) for the reference system and Python environment definitions.
+FreeTimeGS++ currently targets Python 3.12 and CUDA 12.4 in this container setup. The repository also assumes standard system tools such as `ffmpeg`, `nvcc`, and native build tooling for Python extensions. See [Dockerfile](Dockerfile), [flake.nix](flake.nix), and [uv.lock](uv.lock) for the reference system and Python environment definitions.
 
 ## Installation
 
@@ -60,6 +60,10 @@ cd FreeTimeGSPlusPlus
 uv sync --group with-torch
 uv pip install "gsplat==1.5.3"
 ```
+
+If `nvcc` is installed under `/usr/local/cuda/bin`, make sure that directory is on `PATH` before running `uv sync`; native extensions such as `tinycudann` use it to detect CUDA and select the required C++17 build mode.
+
+Because `gsplat` is intentionally not declared as a project dependency, run the `gsplat` install step after `uv sync`.
 
 If you need a different installation method, follow the upstream instructions at <https://github.com/nerfstudio-project/gsplat>, but keep the version pinned to `1.5.3` for this release unless you have re-validated the code against another version. Most core commands in this repository require `gsplat` to be present in the environment.
 

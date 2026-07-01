@@ -25,7 +25,7 @@
           ];
         };
       };
-      cudaArchitectures = "90";
+      cudaArchitectures = "89";
       packages =
         with pkgs;
         [
@@ -40,7 +40,7 @@
           (callPackage ./nix/poselib.nix { })
           (callPackage ./nix/colmap.nix { inherit cudaArchitectures; })
         ]
-        ++ (with cudaPackages_12_8; [
+        ++ (with cudaPackages_12_4; [
           cuda_cccl
           cuda_cudart
           cuda_cupti
