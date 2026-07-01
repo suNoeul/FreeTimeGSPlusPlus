@@ -5,7 +5,7 @@ import argparse
 import asyncio
 import json
 import os
-from asyncio import CancelledError, Semaphore, Server, StreamReader, StreamWriter
+from asyncio import Semaphore, Server, StreamReader, StreamWriter
 from asyncio.subprocess import Process
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -60,62 +60,83 @@ class Extractor:
         async with self.sem:
             name = to_image_name(frame=f"%0{FRAME_INDEX_WIDTH}d", camera=camera)
             print(f"extracting {path}")
-            s = await asyncio.start_server(
+            server = await asyncio.start_server(
                 self._handler, host="0.0.0.0", port=13337 + camera
             )
-            self.servers.append(s)
+            self.servers.append(server)
+            process = None
 
-            filter_trim = f"trim=start_frame={self.frame_range[0]}"
-            if self.frame_range[1] is not None:
-                filter_trim += f":end_frame={self.frame_range[1]}"
+            try:
+                filter_trim = f"trim=start_frame={self.frame_range[0]}"
+                if self.frame_range[1] is not None:
+                    filter_trim += f":end_frame={self.frame_range[1]}"
 
-            p = await asyncio.create_subprocess_exec(
-                "ffmpeg",
-                "-hide_banner",
-                "-loglevel",
-                "warning",
-                "-nostats",
-                "-nostdin",
-                "-i",
-                path,
-                "-vf",
-                f"{filter_trim},format=rgb24",
-                "-vcodec",
-                "libwebp",
-                "-lossless",
-                "1",
-                "-compression_level",
-                str(self.compression_level),
-                "-quality",
-                str(self.quality),
-                "-progress",
-                f"tcp://localhost:{13337 + camera}",
-                "-start_number",
-                str(self.frame_range[0]),
-                str(self.out_path / name),
-                preexec_fn=os.setpgrp,
-            )
+                process = await asyncio.create_subprocess_exec(
+                    "ffmpeg",
+                    "-hide_banner",
+                    "-loglevel",
+                    "warning",
+                    "-nostats",
+                    "-nostdin",
+                    "-y",
+                    "-i",
+                    path,
+                    "-vf",
+                    f"{filter_trim},format=rgb24",
+                    "-vcodec",
+                    "libwebp",
+                    "-lossless",
+                    "1",
+                    "-compression_level",
+                    str(self.compression_level),
+                    "-quality",
+                    str(self.quality),
+                    "-progress",
+                    f"tcp://localhost:{13337 + camera}",
+                    "-start_number",
+                    str(self.frame_range[0]),
+                    str(self.out_path / name),
+                    preexec_fn=os.setpgrp,
+                )
 
-            self.processes.append(p)
-            await p.wait()
-            self.processes.remove(p)
+                self.processes.append(process)
+                await process.wait()
+            finally:
+                if process is not None:
+                    if process in self.processes:
+                        self.processes.remove(process)
+                    if process.returncode is None:
+                        process.kill()
+                        await process.wait()
 
-    async def _handler(self, r: StreamReader, _w: StreamWriter):
+                server.close()
+                await server.wait_closed()
+                if server in self.servers:
+                    self.servers.remove(server)
+
+    async def _handler(self, r: StreamReader, w: StreamWriter):
         prev = 0
 
-        while not r.at_eof():
-            line = await r.readline()
-            line = bytes.decode(line).strip()
+        try:
+            while not r.at_eof():
+                line_bytes = await r.readline()
+                if not line_bytes:
+                    return
 
-            if line.startswith("frame="):
-                frame = int(line.removeprefix("frame="))
-                delta = frame - prev
-                prev = frame
+                line = bytes.decode(line_bytes).strip()
 
-                self.bar.update(delta)
+                if line.startswith("frame="):
+                    frame = int(line.removeprefix("frame="))
+                    delta = frame - prev
+                    prev = frame
 
-            if line == "progress=end":
-                return
+                    self.bar.update(delta)
+
+                if line == "progress=end":
+                    return
+        finally:
+            w.close()
+            await w.wait_closed()
 
     async def start(self):
         self.bar = tqdm(total=self.num_frames)
@@ -124,13 +145,22 @@ class Extractor:
             await asyncio.gather(
                 *(self._launch(video, cam) for cam, video in enumerate(self.videos))
             )
-        except CancelledError:
+        except BaseException:
             print(self.processes)
             for p in self.processes:
-                p.kill()
-            await asyncio.gather(*(p.wait() for p in self.processes))
+                if p.returncode is None:
+                    p.kill()
+            await asyncio.gather(
+                *(p.wait() for p in self.processes), return_exceptions=True
+            )
             for s in self.servers:
                 s.close()
+            await asyncio.gather(
+                *(s.wait_closed() for s in self.servers), return_exceptions=True
+            )
+            raise
+        finally:
+            self.bar.close()
 
 
 async def video_length(video) -> int:
@@ -186,6 +216,9 @@ def main(args: argparse.Namespace):
     num_cameras = len(list(sorted(input_path.glob("*.mp4"))))
     if num_cameras == 0:
         raise FileNotFoundError(f"no mp4 files found in {input_path}")
+    if already_extracted(output_path, num_cameras, frame_range):
+        print(f"skipping already extracted frames in {output_path}")
+        return
 
     extractor = Extractor(
         video_path=input_path,
