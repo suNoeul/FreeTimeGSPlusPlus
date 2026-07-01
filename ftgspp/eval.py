@@ -63,7 +63,7 @@ def make_lpips_metric(net_type: str) -> MetricFn:
     ).cuda()
 
     def fn(pred: Tensor, gt: Tensor) -> float:
-        # Keep eval LPIPS consistent with training-time normalization.
+        # Match training-time LPIPS: normalize=False with [0, 1] inputs.
         pred_lpips = pred.clamp(0, 1)
         gt_lpips = gt.clamp(0, 1)
         return float(metric(pred_lpips, gt_lpips))

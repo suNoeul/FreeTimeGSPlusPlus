@@ -89,7 +89,7 @@ def train(
     lpips_fn = None
     if loss_weights["lpips"] > 0:
         lpips_fn = LearnedPerceptualImagePatchSimilarity(
-            net_type="alex", normalize=True
+            net_type="alex", normalize=False
         ).cuda()
     velocity_distill_xyz = None
     velocity_distill_t = None
@@ -139,8 +139,8 @@ def train(
             1 - fused_ssim(chw(pred), chw(gt), padding="valid")
         )
         if lpips_fn is not None:
-            # Color correction can push RGB slightly outside [0, 1].
-            # LPIPS in torchmetrics validates strict input bounds.
+            # LPIPS with normalize=False expects inputs in [0, 1].
+            # Color correction can push RGB slightly outside that range.
             pred_lpips = pred.clamp(0, 1)
             gt_lpips = gt.clamp(0, 1)
             loss_lpips = loss_weights["lpips"] * lpips_fn(chw(pred_lpips), chw(gt_lpips))
