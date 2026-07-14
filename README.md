@@ -1,5 +1,9 @@
 <div align="center">
   <h1>FreeTimeGS++: Secrets of Dynamic Gaussian<br />Splatting and Their Principles</h1>
+  <p>
+    <strong>Official implementation of FreeTimeGS++</strong><br />
+    Also searchable as <strong>FreeTimeGSPlusPlus</strong>, <strong>FreeTimeGS Plus Plus</strong>, and <strong>FreeTimeGS++ code</strong>.
+  </p>
   <a href="https://yklcs.com/">Lucas Yunkyu Lee</a><sup>1,2,*</sup>,
   <a href="https://sunoeul.github.io/">Soonho Kim</a><sup>1,*</sup>,
   <a href="https://ywk02.github.io/">Youngwook Kim</a><sup>1</sup>,
@@ -50,7 +54,7 @@ This repository intentionally does not declare `gsplat` as an automatic Python d
 This release is validated against `gsplat==1.5.3`. In particular, the relocation path uses `gsplat` private strategy helpers, so using a newer or older version is not recommended unless you re-validate compatibility yourself.
 
 ```shell
-git clone https://github.com/yklcs/FreeTimeGSPlusPlus.git
+git clone https://github.com/SNU-VGILab/FreeTimeGSPlusPlus.git
 cd FreeTimeGSPlusPlus
 
 uv sync --group with-torch

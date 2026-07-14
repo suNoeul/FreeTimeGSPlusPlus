@@ -3,6 +3,7 @@
 
 import math
 from importlib.metadata import PackageNotFoundError, version
+from typing import Literal
 
 import torch
 from gsplat.relocation import compute_relocation
@@ -13,6 +14,7 @@ from ftgspp.models.gaussians import Gaussians
 from ftgspp.train.optim import OptimizerCollection
 
 REQUIRED_GSPLAT_VERSION = "1.5.3"
+RelocationMode = Literal["partial_copy", "exact_copy", "3d_mcmc"]
 
 try:
     INSTALLED_GSPLAT_VERSION = version("gsplat")
@@ -48,13 +50,13 @@ def relocate(
     mask: Tensor,
     binoms: Tensor,
     min_opacity: float = 0.005,
-    mode: str = "3d_mcmc",
+    mode: RelocationMode = "3d_mcmc",
 ):
     """Thin wrapper around gsplat relocation with FTGS++ sampling scores."""
-    if mode != "3d_mcmc":
+    if mode not in {"partial_copy", "exact_copy", "3d_mcmc"}:
         raise ValueError(
             f"Unsupported relocation mode: {mode}. "
-            "This release only supports '3d_mcmc'."
+            "Supported modes are 'partial_copy', 'exact_copy', and '3d_mcmc'."
         )
 
     dead_indices = mask.nonzero(as_tuple=True)[0]
@@ -69,6 +71,29 @@ def relocate(
         replacement=True,
     )
     source_indices = alive_indices[sampled_local]
+
+    if mode == "partial_copy":
+        _relocate_copy(
+            gs=gs,
+            optimizers=optimizers,
+            state=state,
+            dead_indices=dead_indices,
+            source_indices=source_indices,
+            preserve_opacity_scale=True,
+        )
+        return
+
+    if mode == "exact_copy":
+        _relocate_copy(
+            gs=gs,
+            optimizers=optimizers,
+            state=state,
+            dead_indices=dead_indices,
+            source_indices=source_indices,
+            preserve_opacity_scale=False,
+        )
+        return
+
     _relocate_mcmc(
         gs=gs,
         optimizers=optimizers,
@@ -78,6 +103,40 @@ def relocate(
         binoms=binoms,
         min_opacity=min_opacity,
     )
+
+
+@torch.no_grad()
+def _relocate_copy(
+    gs: Gaussians,
+    optimizers: OptimizerCollection,
+    state: dict[str, Tensor],
+    dead_indices: Tensor,
+    source_indices: Tensor,
+    preserve_opacity_scale: bool,
+):
+    def param_fn(name: str, param: Tensor) -> nn.Parameter:
+        updated = param.detach().clone()
+        if preserve_opacity_scale and name in {"opacities", "scales"}:
+            return nn.Parameter(updated, requires_grad=param.requires_grad)
+
+        updated[dead_indices] = updated[source_indices]
+        return nn.Parameter(updated, requires_grad=param.requires_grad)
+
+    def optimizer_fn(_: str, value: Tensor) -> Tensor:
+        updated = value.clone()
+        updated[dead_indices] = 0
+        return updated
+
+    _update_param_with_optimizer(
+        param_fn=param_fn,
+        optimizer_fn=optimizer_fn,
+        params=gs._parameters,
+        optimizers=optimizers.asdict(),
+    )
+
+    for key, value in state.items():
+        if isinstance(value, Tensor):
+            value[dead_indices] = value[source_indices]
 
 
 @torch.no_grad()
