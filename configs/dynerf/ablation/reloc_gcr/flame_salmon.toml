@@ -1,0 +1,7 @@
+extends = "../../ftgs/flame_salmon.toml"
+
+# Relocation score-mode ablation (gcr): gcr_clone score
+# Only train.relocation.score_mode is overridden; init and all other settings inherit
+# from the shared ftgs base so init.pt can be reused across settings.
+[train.relocation]
+score_mode = "gcr_clone"

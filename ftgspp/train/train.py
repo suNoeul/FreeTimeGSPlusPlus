@@ -312,15 +312,19 @@ def relocate_gaussians(
     logger: logging.Logger,
 ) -> tuple[int, bool]:
     opacities = torch.sigmoid(gs.opacities).flatten()
-    opacities_probs = opacities / opacities.sum()
+    opacities_probs = _safe_normalize(opacities)
     grad2d = state.grad2d_acc()
-    grad2d_probs = grad2d / grad2d.sum()
+    if score_mode == "gcr_clone" and score_mode_start <= it:
+        gcr = state.grad2d_coherence()
+        weight = 0.8 + 25 * (1 - gcr).pow(15)
+        grad2d = grad2d / weight.clamp_min(torch.finfo(weight.dtype).eps)
+    grad2d_probs = _safe_normalize(grad2d)
     probs = opacities_probs + grad2d_probs
 
     if score_mode == "gate_included":
         gate_scores = (1 - gs.gate().flatten())
         if score_mode_start <= it:
-            gate_probs = gate_scores / gate_scores.sum()
+            gate_probs = _safe_normalize(gate_scores)
             probs += gate_probs
     if (not torch.isfinite(probs).all()):
         probs = torch.ones_like(probs)
@@ -355,6 +359,13 @@ def relocate_gaussians(
         logger.debug("Relocation applied relocated=%d", n_gs)
 
     return n_gs, False
+
+
+def _safe_normalize(scores: Tensor) -> Tensor:
+    total = scores.sum()
+    if not torch.isfinite(total) or total <= 0:
+        return torch.ones_like(scores) / scores.numel()
+    return scores / total
 
 
 def make_optimizers(

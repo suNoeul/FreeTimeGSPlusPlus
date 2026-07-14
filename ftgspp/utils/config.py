@@ -93,7 +93,7 @@ class TrainConfig(ConfigBase):
         every: int
         opacity_threshold: float
         mode: Literal["partial_copy", "exact_copy", "3d_mcmc"] = "3d_mcmc"
-        score_mode: Literal["default", "gate_included"] = "default"
+        score_mode: Literal["default", "gate_included", "gcr_clone"] = "default"
         score_mode_start: int = 3000
 
     relocation: RelocationConfig

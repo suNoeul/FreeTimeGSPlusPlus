@@ -1,0 +1,7 @@
+extends = "../../ftgs/corgi2.toml"
+
+# Relocation score-mode ablation (gcr): gcr_clone score
+# Only train.relocation.score_mode is overridden; init inherits from the shared ftgs base
+# so a single init.pt per scene is reused across both settings.
+[train.relocation]
+score_mode = "gcr_clone"
