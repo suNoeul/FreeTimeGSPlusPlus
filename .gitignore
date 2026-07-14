@@ -29,6 +29,7 @@ nohup.out
 /_run/
 
 # Symlinked project-generated outputs
+/_archive
 /_extracted
 /_colmap
 /_points
