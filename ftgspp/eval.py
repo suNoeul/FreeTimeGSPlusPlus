@@ -11,19 +11,17 @@ from typing import Callable, Mapping
 
 import msgspec
 import torch
-from memfof import MEMFOF
 from torch import Tensor
 from torchmetrics.image import (
     LearnedPerceptualImagePatchSimilarity,
     PeakSignalNoiseRatio,
     StructuralSimilarityIndexMeasure,
 )
-from tqdm import tqdm
 
 from ftgspp.data.utils import MultiViewData
 from ftgspp.models.gaussians import Gaussians
 from ftgspp.utils import Config, camera_indexer
-from ftgspp.utils.math import chw, groupwise, hwc
+from ftgspp.utils.math import chw
 
 type MetricFn = Callable[[Tensor, Tensor], float]
 
@@ -57,13 +55,14 @@ class MetricTracker:
         return deepcopy(self._history)
 
 
-def make_lpips_metric(net_type: str) -> MetricFn:
+def make_lpips_metric(net_type: str, normalize: bool = False) -> MetricFn:
+    # normalize=False matches training-time LPIPS with [0, 1] inputs (our
+    # reporting convention); normalize=True is measured alongside for reference.
     metric = LearnedPerceptualImagePatchSimilarity(
-        net_type=net_type, normalize=False
+        net_type=net_type, normalize=normalize
     ).cuda()
 
     def fn(pred: Tensor, gt: Tensor) -> float:
-        # Match training-time LPIPS: normalize=False with [0, 1] inputs.
         pred_lpips = pred.clamp(0, 1)
         gt_lpips = gt.clamp(0, 1)
         return float(metric(pred_lpips, gt_lpips))
@@ -94,53 +93,6 @@ def eval_rgb(
     return tracker.history()
 
 
-@torch.inference_mode()
-def eval_oflow(
-    gs: Gaussians,
-    eval_set: MultiViewData,
-    metric_fns: Mapping[str, MetricFn],
-) -> MetricHistory:
-    flow_model = MEMFOF.from_pretrained("egorchistov/optical-flow-MEMFOF-Tartan-T-TSKH")
-    flow_model.eval().cuda()
-    tracker = MetricTracker(metric_fns)
-
-    for batch in tqdm(
-        groupwise(eval_set.cuda(), 3),
-        total=eval_set.num_frames - 2,
-    ):
-        prev, curr, next = batch
-
-        frames = torch.stack([prev.rgb, curr.rgb, next.rgb]).cuda()
-        data = torch.einsum("tnhwc->ntchw", frames)
-
-        _flow_bwd, flow = flow_model(data)["flow"][-1].unbind(dim=1)
-
-        flow_pred = gs.render_oflow(
-            t0=curr.time,
-            t1=next.time,
-            w2c=curr.w2c,
-            intrinsic=curr.intrinsic,
-            shape=(eval_set.height, eval_set.width),
-        )
-
-        flow_gt = hwc(flow).contiguous()
-        flow_pred = flow_pred.contiguous()
-        tracker(flow_pred, flow_gt)
-    return tracker.history()
-
-
-def epe(pred: Tensor, gt: Tensor) -> float:
-    assert pred.shape[-1] == gt.shape[-1] == 2
-    l2 = torch.square(pred - gt).sum(dim=-1).sqrt()
-    return float(l2.mean())
-
-
-def n_pixel(pred: Tensor, gt: Tensor, n: float) -> float:
-    assert pred.shape[-1] == gt.shape[-1] == 2
-    l2 = torch.square(pred - gt).sum(dim=-1).sqrt()
-    return 100 - 100 * float((l2 < n).float().mean())
-
-
 @torch.no_grad()
 def main(args: argparse.Namespace):
     config = Config.load(args.run_path / "config.toml")
@@ -155,8 +107,10 @@ def main(args: argparse.Namespace):
 
     metric_fns_rgb = {
         "psnr": PeakSignalNoiseRatio(data_range=1).cuda(),
-        "lpips-alex": make_lpips_metric("alex"),
-        "lpips-vgg": make_lpips_metric("vgg"),
+        "lpips-alex": make_lpips_metric("alex", normalize=False),
+        "lpips-vgg": make_lpips_metric("vgg", normalize=False),
+        "lpips-alex-norm": make_lpips_metric("alex", normalize=True),
+        "lpips-vgg-norm": make_lpips_metric("vgg", normalize=True),
         "ssim-1": StructuralSimilarityIndexMeasure(data_range=1).cuda(),
         "ssim-2": StructuralSimilarityIndexMeasure(data_range=2).cuda(),
     }
@@ -168,20 +122,6 @@ def main(args: argparse.Namespace):
     metrics["dssim-1"] = (1 - metrics["ssim-1"]) / 2
     metrics["dssim-2"] = (1 - metrics["ssim-2"]) / 2
     metrics["size"] = os.path.getsize(args.run_path / args.filename)
-
-    metric_fns_oflow = {
-        "epe": epe,
-        "1px-error": lambda pred, gt: n_pixel(pred, gt, 1),
-        "3px-error": lambda pred, gt: n_pixel(pred, gt, 3),
-        "5px-error": lambda pred, gt: n_pixel(pred, gt, 5),
-    }
-    metrics_oflow = eval_oflow(
-        gs,
-        eval_set,
-        metric_fns_oflow,
-    ).mean()
-
-    metrics |= metrics_oflow
 
     pprint.pp(metrics)
 
