@@ -1,0 +1,70 @@
+[model]
+velocity_model = "explicit"
+max_duration = inf
+marginal_gating = false
+
+[data]
+video_path = "/data/enerf_outdoor/actor5_6"
+calibration_path = "/data/enerf_outdoor"
+extracted_path = "_extracted/enerf_outdoor/actor5_6"
+memmap_path = "_memmap/enerf_outdoor/actor5_6"
+colmap_path = "_colmap/enerf_outdoor/actor5_6"
+fps = 60
+scale = 1.0
+frames = { "start" = 0, "stop" = 300 }
+eval_cameras = [8]
+train_cameras = [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17]
+
+[init]
+points_path = "_points/enerf_outdoor/actor5_6"
+keyframe_stride = 10
+num_points_per_frame = 700_000
+num_gaussians = 500_000
+num_velocity_nns = 3
+sh_degree = 3
+opacity = 0.5
+scale = 0.1
+duration = 0.1
+
+[init.roma]
+model = "indoor"
+num_nearest_cameras = 1
+upsample_preds = true
+symmetric = false
+geometric_verification = true
+backend = "v2"
+
+[train]
+iterations = 30000
+batch_size = 1
+lpips_loss = true
+color_correction = false
+color_correction_start = 3000
+color_corrector_weight = 1e-3
+hard_separation = false
+
+[train.relocation]
+start = 500
+stop = 25000
+every = 100
+opacity_threshold = 5e-3
+mode = "3d_mcmc"
+score_mode = "default"
+score_mode_start = 3000
+
+[train.lrs]
+means = 1.6e-4
+quats = 1e-3
+scales = 5e-3
+opacities = 5e-2
+sh_0 = 2.5e-3
+sh_n = 1.25e-4
+durations = 5e-3
+times = 1.6e-4
+velocity_model = 1.6e-3
+marginal_gates = 1e-3
+color_correctors = 1e-3
+
+[train.lr_schedules]
+means = 0.01
+velocity_model = 0.01
