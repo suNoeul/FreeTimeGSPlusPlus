@@ -30,6 +30,7 @@ nohup.out
 
 # Symlinked project-generated outputs
 /_archive
+/_rebuttal
 /_extracted
 /_colmap
 /_points
