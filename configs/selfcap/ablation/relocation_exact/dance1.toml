@@ -1,0 +1,4 @@
+extends = "../../ftgs/dance1.toml"
+
+[train.relocation]
+mode = "exact_copy"

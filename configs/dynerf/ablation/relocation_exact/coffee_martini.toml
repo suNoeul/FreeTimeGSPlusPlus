@@ -1,0 +1,4 @@
+extends = "../../ftgs/coffee_martini.toml"
+
+[train.relocation]
+mode = "exact_copy"

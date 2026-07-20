@@ -160,6 +160,8 @@ def stats(
         "PSNR_max": ("psnr", "max", 2),
         "LPIPS-Alex": ("lpips-alex", "mean", 3),
         "LPIPS-Vgg": ("lpips-vgg", "mean", 3),
+        "LPIPS-Alex-Norm": ("lpips-alex-norm", "mean", 3),
+        "LPIPS-Vgg-Norm": ("lpips-vgg-norm", "mean", 3),
         "SSIM-1": ("ssim-1", "mean", 3),
         "SSIM-2": ("ssim-2", "mean", 3),
         "DSSIM-1": ("dssim-1", "mean", 3),
